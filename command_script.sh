@@ -1,0 +1,1 @@
+srun --job-name test_dataloader --account cosc028244 --partition gpu_short --nodes 1 --gres gpu:1 --time 0:20:00 --mem 24GB python yolo_classifier.py
