@@ -1,1 +1,7 @@
-path: /group/nwc-group/tony/pmfeed_4_3_16_hand_labelled
+path: /user/work/yf20630
+train: images/train
+val: images/val
+test: images/test
+
+nc: 8  # number of classes
+names: ['cow1', 'cow2', 'cow3', 'cow4', 'cow5', 'cow6', 'cow7', 'cow8']

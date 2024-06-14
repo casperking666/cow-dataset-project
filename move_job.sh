@@ -22,7 +22,18 @@ echo "${SLURM_JOB_NODELIST}"
 # source ~/.bashrc
 
 # Move files from source to destination
-rsync -av /group/nwc-group/tony/pmfeed_4_3_16_hand_labelled/ /user/home/yf20630/raw-cow-images/
+# rsync -av /group/nwc-group/tony/pmfeed_4_3_16_hand_labelled/ /user/home/yf20630/raw-cow-images/
+
+# Define source and target directories
+SOURCE_DIR="/path/to/source_folder"
+TARGET_DIR="/path/to/target_folder/subfolder"
+
+# Create the target directory if it doesn't exist
+mkdir -p "$TARGET_DIR"
+
+# Use tar to move the files
+tar cf - -C "$SOURCE_DIR" . | pv | tar xf - -C "$TARGET_DIR"
+
 
 # Check if the move was successful
 if [ $? -eq 0 ]; then
