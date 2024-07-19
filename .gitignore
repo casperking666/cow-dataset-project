@@ -8,5 +8,6 @@ augmentation/
 augmentation2/
 results_vit/
 runs/
+.cometml-runs/
 *.log
 *.out
