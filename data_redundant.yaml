@@ -1,0 +1,14 @@
+path: /user/work/yf20630/cow-dataset-project/datasets/cow_cls/
+train: train
+val: val
+test: test
+
+names:
+  0: cow0
+  1: cow1
+  2: cow2
+  3: cow3
+  4: cow4
+  5: cow5
+  6: cow6
+  7: cow7

@@ -1,3 +1,12 @@
-images/
+datasets/
+jobs/
+logs/
+logs_round2/
+models/
+result_vit/
+augmentation/
+augmentation2/
+results_vit/
+runs/
 *.log
 *.out

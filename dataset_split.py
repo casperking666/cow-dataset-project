@@ -26,7 +26,7 @@ def copy_files(file_paths, destination_folder):
         shutil.copy(file_path, destination_folder)
 
 image_dir = '/group/nwc-group/tony/pmfeed_4_3_16_hand_labelled'
-output_dir = '/user/work/yf20630/images'
+output_dir = '/user/work/yf20630/cow-dataset-project/datasets/cow-labelled-images/images'
 
 train_dir = os.path.join(output_dir, 'train')
 val_dir = os.path.join(output_dir, 'val')

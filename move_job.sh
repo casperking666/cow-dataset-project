@@ -4,8 +4,9 @@
 #SBATCH --partition=short
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=4
+#SBATCH --cpus-per-task=24
 #SBATCH --time=12:00:00
-#SBATCH --mem=16GB
+#SBATCH --mem=20GB
 #SBATCH --account=cosc028244
 
 cd "${SLURM_SUBMIT_DIR}"
@@ -25,14 +26,11 @@ echo "${SLURM_JOB_NODELIST}"
 # rsync -av /group/nwc-group/tony/pmfeed_4_3_16_hand_labelled/ /user/home/yf20630/raw-cow-images/
 
 # Define source and target directories
-SOURCE_DIR="/path/to/source_folder"
-TARGET_DIR="/path/to/target_folder/subfolder"
-
-# Create the target directory if it doesn't exist
-mkdir -p "$TARGET_DIR"
+SOURCE_DIR="/user/work/yf20630/images"
+TARGET_DIR="/user/work/yf20630/cow-dataset-project/datasets/cow-labelled-images"
 
 # Use tar to move the files
-tar cf - -C "$SOURCE_DIR" . | pv | tar xf - -C "$TARGET_DIR"
+tar cf - -C "$SOURCE_DIR" . | tar xf - -C "$TARGET_DIR"
 
 
 # Check if the move was successful
