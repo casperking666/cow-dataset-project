@@ -8,6 +8,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --account=cosc028244
+#SBATCH --output=vit-bs8-40.out
 
 
 cd "${SLURM_SUBMIT_DIR}"
@@ -20,7 +21,7 @@ echo Slurm job ID is "${SLURM_JOBID}"
 echo This jobs runs on the following machines:
 echo "${SLURM_JOB_NODELIST}"
 
-export COMET_API_KEY=4h2enjtP3OL4Q9bH9Sbf8sfuC
+# export COMET_API_KEY=4h2enjtP3OL4Q9bH9Sbf8sfuC
 
 
 # Activate virtualenv

@@ -1,19 +1,18 @@
 import torch
-from transformers import ViTFeatureExtractor, ViTForImageClassification, Trainer, TrainingArguments
-from datasets import load_dataset, load_metric
+from transformers import AutoImageProcessor, ViTForImageClassification, Trainer, TrainingArguments
+from datasets import load_dataset
 from torchvision.transforms import Compose, Resize, ToTensor, Normalize
-from transformers import DefaultDataCollator
-import os
+import evaluate
 import numpy as np
 
 # Check if GPU is available and set the device accordingly
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Load the feature extractor
-feature_extractor = ViTFeatureExtractor.from_pretrained('google/vit-base-patch16-224')
+# Load the image processor
+image_processor = AutoImageProcessor.from_pretrained('google/vit-base-patch16-224')
 
 # Define image transformations
-normalize = Normalize(mean=feature_extractor.image_mean, std=feature_extractor.image_std)
+normalize = Normalize(mean=image_processor.image_mean, std=image_processor.image_std)
 transforms = Compose([
     Resize((224, 224)),
     ToTensor(),
@@ -28,10 +27,7 @@ def preprocess_images(examples):
     examples['pixel_values'] = [transforms(image.convert('RGB')) for image in examples['image']]
     return examples
 
-dataset = dataset.map(preprocess_images, batched=True)
-
-# Remove unused columns
-dataset = dataset.remove_columns(['image'])
+dataset = dataset.map(preprocess_images, batched=True, remove_columns=['image'])
 
 # Split into train and validation sets
 train_dataset = dataset['train']
@@ -48,9 +44,9 @@ model.to(device)  # Move the model to the GPU if available
 # Define training arguments
 training_args = TrainingArguments(
     output_dir='./results_vit',
-    evaluation_strategy='epoch',
-    per_device_train_batch_size=16,
-    per_device_eval_batch_size=16,
+    eval_strategy='epoch',
+    per_device_train_batch_size=8,
+    per_device_eval_batch_size=8,
     num_train_epochs=40,
     save_steps=10_000,
     save_total_limit=2,
@@ -58,12 +54,9 @@ training_args = TrainingArguments(
     logging_steps=10,
 )
 
-# Create a data collator
-data_collator = DefaultDataCollator()
-
 # Load metrics
-accuracy_metric = load_metric('accuracy', trust_remote_code=True)
-f1_metric = load_metric('f1', trust_remote_code=True)
+accuracy_metric = evaluate.load('accuracy')
+f1_metric = evaluate.load('f1')
 
 def compute_metrics(p):
     preds = np.argmax(p.predictions, axis=1)
@@ -77,8 +70,6 @@ trainer = Trainer(
     args=training_args,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
-    tokenizer=feature_extractor,
-    data_collator=data_collator,
     compute_metrics=compute_metrics
 )
 
