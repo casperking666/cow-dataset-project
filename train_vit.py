@@ -7,92 +7,96 @@ import numpy as np
 from transformers.integrations import TensorBoardCallback
 import os
 
-# Check if GPU is available and set the device accordingly
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def get_device():
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Load the image processor
-image_processor = AutoImageProcessor.from_pretrained('google/vit-base-patch16-224')
+def get_transforms(image_processor):
+    normalize = Normalize(mean=image_processor.image_mean, std=image_processor.image_std)
+    return Compose([
+        Resize((224, 224)),
+        ToTensor(),
+        normalize,
+    ])
 
-# Define image transformations
-normalize = Normalize(mean=image_processor.image_mean, std=image_processor.image_std)
-transforms = Compose([
-    Resize((224, 224)),
-    ToTensor(),
-    normalize,
-])
-
-# Load dataset
-dataset = load_dataset('/user/work/yf20630/cow-dataset-project/datasets', data_dir='subset_tiny')
-
-# Preprocess the dataset
-def preprocess_images(examples):
+def preprocess_images(examples, transforms):
     examples['pixel_values'] = [transforms(image.convert('RGB')) for image in examples['image']]
     return examples
 
-dataset = dataset.map(preprocess_images, batched=True, remove_columns=['image'])
+def load_and_preprocess_dataset(dataset_path, transforms):
+    dataset = load_dataset(dataset_path, data_dir='subset_tiny')
+    dataset = dataset.map(lambda examples: preprocess_images(examples, transforms), batched=True, remove_columns=['image'])
+    return dataset['train'], dataset['test']
 
-# Split into train and validation sets
-train_dataset = dataset['train']
-val_dataset = dataset['test']
+def load_model(num_labels, device):
+    model = ViTForImageClassification.from_pretrained(
+        'google/vit-base-patch16-224', 
+        num_labels=num_labels,
+        ignore_mismatched_sizes=True
+    )
+    return model.to(device)
 
-# Load the model
-model = ViTForImageClassification.from_pretrained(
-    'google/vit-base-patch16-224', 
-    num_labels=len(dataset['train'].features['label'].names),
-    ignore_mismatched_sizes=True
-)
-model.to(device)  # Move the model to the GPU if available
-
-# Function to create log directory name
 def get_log_dir(batch_size, num_epochs, run_number):
     return f'./logs_vit/bs={batch_size}_e={num_epochs}_run_{run_number}'
 
-# Set your parameters
-batch_size = 8
-num_epochs = 60
-run_number = 2
-
-# Create the log directory
-log_dir = get_log_dir(batch_size, num_epochs, run_number)
-os.makedirs(log_dir, exist_ok=True)
-
-# Define training arguments
-training_args = TrainingArguments(
-    output_dir='./results_vit',
-    eval_strategy='epoch',
-    per_device_train_batch_size=batch_size,
-    per_device_eval_batch_size=batch_size,
-    num_train_epochs=num_epochs,
-    save_steps=10_000,
-    save_total_limit=2,
-    logging_dir=log_dir,
-    logging_steps=10,
-    report_to=["tensorboard"],  # Enable TensorBoard reporting
-)
-
-# Load metrics
-accuracy_metric = evaluate.load('accuracy')
-f1_metric = evaluate.load('f1')
+def get_training_args(batch_size, num_epochs, log_dir):
+    return TrainingArguments(
+        output_dir='./results_vit',
+        eval_strategy='epoch',
+        per_device_train_batch_size=batch_size,
+        per_device_eval_batch_size=batch_size,
+        num_train_epochs=num_epochs,
+        save_steps=10_000,
+        save_total_limit=2,
+        logging_dir=log_dir,
+        logging_steps=10,
+        report_to=["tensorboard"],
+    )
 
 def compute_metrics(p):
+    accuracy_metric = evaluate.load('accuracy')
+    f1_metric = evaluate.load('f1')
+    
     preds = np.argmax(p.predictions, axis=1)
     accuracy = accuracy_metric.compute(predictions=preds, references=p.label_ids)
     f1 = f1_metric.compute(predictions=preds, references=p.label_ids, average='weighted')
     return {"accuracy": accuracy["accuracy"], "f1": f1["f1"]}
 
-# Initialize the Trainer with TensorBoard callback
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=train_dataset,
-    eval_dataset=val_dataset,
-    compute_metrics=compute_metrics,
-    callbacks=[TensorBoardCallback()]  # Add TensorBoard callback
-)
+def train_and_evaluate(model, train_dataset, val_dataset, training_args):
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=val_dataset,
+        compute_metrics=compute_metrics,
+        callbacks=[TensorBoardCallback()]
+    )
+    
+    trainer.train()
+    results = trainer.evaluate()
+    return results
 
-# Train the model
-trainer.train()
+def main():
+    # Set your parameters
+    batch_size = 8
+    num_epochs = 50
+    run_number = 3
+    dataset_path = '/user/work/yf20630/cow-dataset-project/datasets'
 
-# Evaluate the model
-results = trainer.evaluate()
-print(results)
+    device = get_device()
+    image_processor = AutoImageProcessor.from_pretrained('google/vit-base-patch16-224')
+    transforms = get_transforms(image_processor)
+    
+    train_dataset, val_dataset = load_and_preprocess_dataset(dataset_path, transforms)
+    
+    model = load_model(num_labels=len(train_dataset.features['label'].names), device=device)
+    
+    log_dir = get_log_dir(batch_size, num_epochs, run_number)
+    os.makedirs(log_dir, exist_ok=True)
+    
+    training_args = get_training_args(batch_size, num_epochs, log_dir)
+    
+    results = train_and_evaluate(model, train_dataset, val_dataset, training_args)
+    print(results)
+
+if __name__ == "__main__":
+    main()
