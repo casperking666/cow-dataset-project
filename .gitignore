@@ -9,6 +9,6 @@ augmentation2/
 results_vit/
 runs/
 .cometml-runs/
-.cometml-runs
+logs_vit/
 *.log
 *.out

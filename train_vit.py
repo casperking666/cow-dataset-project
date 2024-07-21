@@ -4,6 +4,8 @@ from datasets import load_dataset
 from torchvision.transforms import Compose, Resize, ToTensor, Normalize
 import evaluate
 import numpy as np
+from transformers.integrations import TensorBoardCallback
+import os
 
 # Check if GPU is available and set the device accordingly
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -41,17 +43,31 @@ model = ViTForImageClassification.from_pretrained(
 )
 model.to(device)  # Move the model to the GPU if available
 
+# Function to create log directory name
+def get_log_dir(batch_size, num_epochs, run_number):
+    return f'./logs_vit/bs={batch_size}_e={num_epochs}_run_{run_number}'
+
+# Set your parameters
+batch_size = 8
+num_epochs = 60
+run_number = 2
+
+# Create the log directory
+log_dir = get_log_dir(batch_size, num_epochs, run_number)
+os.makedirs(log_dir, exist_ok=True)
+
 # Define training arguments
 training_args = TrainingArguments(
     output_dir='./results_vit',
     eval_strategy='epoch',
-    per_device_train_batch_size=8,
-    per_device_eval_batch_size=8,
-    num_train_epochs=40,
+    per_device_train_batch_size=batch_size,
+    per_device_eval_batch_size=batch_size,
+    num_train_epochs=num_epochs,
     save_steps=10_000,
     save_total_limit=2,
-    logging_dir='./logs_vit',
+    logging_dir=log_dir,
     logging_steps=10,
+    report_to=["tensorboard"],  # Enable TensorBoard reporting
 )
 
 # Load metrics
@@ -64,13 +80,14 @@ def compute_metrics(p):
     f1 = f1_metric.compute(predictions=preds, references=p.label_ids, average='weighted')
     return {"accuracy": accuracy["accuracy"], "f1": f1["f1"]}
 
-# Initialize the Trainer
+# Initialize the Trainer with TensorBoard callback
 trainer = Trainer(
     model=model,
     args=training_args,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
-    compute_metrics=compute_metrics
+    compute_metrics=compute_metrics,
+    callbacks=[TensorBoardCallback()]  # Add TensorBoard callback
 )
 
 # Train the model
