@@ -8,7 +8,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --account=cosc028244
-#SBATCH --output=vit-bs8-50.out
+#SBATCH --output=yolo-noflip-noscale.out
 
 
 cd "${SLURM_SUBMIT_DIR}"
@@ -34,7 +34,7 @@ conda activate cow_project
 # cd ..
 
 # Run Python script
-python train_vit.py
+python train.py
 
 # Deactivate virtualenv
 conda deactivate

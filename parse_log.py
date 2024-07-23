@@ -1,8 +1,8 @@
 import os
 
 # Define directories
-logs_dir = './logs'
-summary_file = './summary_results_150e.txt'
+logs_dir = './logs_round2'
+summary_file = './summary_results_round2_150e.txt'
 
 # Initialize list to store results
 results = []
@@ -11,6 +11,9 @@ results = []
 def extract_info(log_file):
     with open(log_file, 'r') as file:
         lines = file.readlines()
+        if lines[2].split()[0] == "Traceback":
+            # print("shabi")
+            return
         
         # Extract parameters (line 4)
         params_line = lines[3].strip()
@@ -42,13 +45,14 @@ def extract_info(log_file):
 for log_file in os.listdir(logs_dir):
     if log_file.endswith('.log') and log_file != "job_164.log" and log_file != "job_230.log":
         log_file_path = os.path.join(logs_dir, log_file)
-        hsv_h, hsv_s, hsv_v, gpu, best_epoch, top1_accuracy = extract_info(log_file_path)
+        if extract_info(log_file_path) != None:
+            hsv_h, hsv_s, hsv_v, gpu, best_epoch, top1_accuracy = extract_info(log_file_path)
         
-        # Extract job id from filename
-        job_id = log_file.split('_')[1].split('.')[0]
-        
-        # Append results
-        results.append((job_id, hsv_h, hsv_s, hsv_v, gpu, best_epoch, top1_accuracy))
+            # Extract job id from filename
+            job_id = log_file.split('_')[1].split('.')[0]
+            
+            # Append results
+            results.append((job_id, hsv_h, hsv_s, hsv_v, gpu, best_epoch, top1_accuracy))
 
 # Sort results by top-1 accuracy
 results.sort(key=lambda x: float(x[-1]), reverse=True)
