@@ -8,7 +8,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --account=cosc028244
-#SBATCH --output=vit-bs8-40-seed42-roboAug.out
+#SBATCH --output=vit-bs8-40-seed23-randAug.out
 
 
 cd "${SLURM_SUBMIT_DIR}"

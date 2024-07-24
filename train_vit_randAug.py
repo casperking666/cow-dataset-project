@@ -6,34 +6,55 @@ import numpy as np
 from transformers.integrations import TensorBoardCallback
 import os
 import random
+from torchvision.transforms import RandAugment, Compose, ToTensor, ToPILImage
 
 def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    # When running on the CuDNN backend, two further options must be set
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    # Set a fixed value for the hash seed
     os.environ["PYTHONHASHSEED"] = str(seed)
 
 def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def preprocess_images(examples, image_processor):
+def get_transforms(is_training):
+    if is_training:
+        return Compose([
+            ToPILImage(),
+            RandAugment(num_ops=2, magnitude=5),
+            ToTensor()
+        ])
+    else:
+        return Compose([ToTensor()])
+
+def preprocess_images(examples, image_processor, transforms):
     images = [image.convert('RGB') for image in examples['image']]
-    examples['pixel_values'] = image_processor(images, return_tensors="pt")['pixel_values']
+    if transforms:
+        images = [transforms(np.array(img)) for img in images]
+    inputs = image_processor(images, return_tensors="pt")
+    examples['pixel_values'] = inputs['pixel_values']
     return examples
 
 def load_and_preprocess_dataset(dataset_path, image_processor):
-    dataset = load_dataset(dataset_path, data_dir='subset_tiny_robo_aug')
-    dataset = dataset.map(
-        lambda examples: preprocess_images(examples, image_processor), 
-        batched=True, 
+    dataset = load_dataset(dataset_path, data_dir='subset_tiny')
+    
+    train_transforms = get_transforms(is_training=True)
+    val_transforms = get_transforms(is_training=False)
+    
+    train_dataset = dataset['train'].map(
+        lambda examples: preprocess_images(examples, image_processor, train_transforms),
+        batched=True,
         remove_columns=['image']
     )
-    return dataset['train'], dataset['test']
+    val_dataset = dataset['test'].map(
+        lambda examples: preprocess_images(examples, image_processor, val_transforms),
+        batched=True,
+        remove_columns=['image']
+    )
+    return train_dataset, val_dataset
 
 def load_model(num_labels, device):
     model = ViTForImageClassification.from_pretrained(
@@ -87,12 +108,11 @@ def train_and_evaluate(model, train_dataset, val_dataset, training_args):
     return results
 
 def main():
-    # Set your parameters
     batch_size = 8
     num_epochs = 40
     run_number = 9
     dataset_path = '/user/work/yf20630/cow-dataset-project/datasets'
-    seed = 42
+    seed = 23
 
     set_seed(seed)
 
