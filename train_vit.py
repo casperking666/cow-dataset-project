@@ -1,11 +1,11 @@
 import torch
 from transformers import AutoImageProcessor, ViTForImageClassification, Trainer, TrainingArguments
 from datasets import load_dataset
-from torchvision.transforms import Compose, Resize, ToTensor, Normalize
 import evaluate
 import numpy as np
 from transformers.integrations import TensorBoardCallback
 import os
+import random
 
 def set_seed(seed):
     random.seed(seed)
@@ -21,21 +21,18 @@ def set_seed(seed):
 def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def get_transforms(image_processor):
-    normalize = Normalize(mean=image_processor.image_mean, std=image_processor.image_std)
-    return Compose([
-        Resize((224, 224)),
-        ToTensor(),
-        normalize,
-    ])
-
-def preprocess_images(examples, transforms):
-    examples['pixel_values'] = [transforms(image.convert('RGB')) for image in examples['image']]
+def preprocess_images(examples, image_processor):
+    images = [image.convert('RGB') for image in examples['image']]
+    examples['pixel_values'] = image_processor(images, return_tensors="pt")['pixel_values']
     return examples
 
-def load_and_preprocess_dataset(dataset_path, transforms):
+def load_and_preprocess_dataset(dataset_path, image_processor):
     dataset = load_dataset(dataset_path, data_dir='subset_tiny_robo_aug')
-    dataset = dataset.map(lambda examples: preprocess_images(examples, transforms), batched=True, remove_columns=['image'])
+    dataset = dataset.map(
+        lambda examples: preprocess_images(examples, image_processor), 
+        batched=True, 
+        remove_columns=['image']
+    )
     return dataset['train'], dataset['test']
 
 def load_model(num_labels, device):
@@ -63,7 +60,7 @@ def get_training_args(batch_size, num_epochs, log_dir, seed):
         report_to=["tensorboard"],
         seed=seed,
         dataloader_drop_last=False,
-        dataloader_num_workers=0,
+        # dataloader_num_workers=0,
     )
 
 def compute_metrics(p):
@@ -97,11 +94,12 @@ def main():
     dataset_path = '/user/work/yf20630/cow-dataset-project/datasets'
     seed = 42
 
+    set_seed(seed)
+
     device = get_device()
     image_processor = AutoImageProcessor.from_pretrained('google/vit-base-patch16-224')
-    transforms = get_transforms(image_processor)
     
-    train_dataset, val_dataset = load_and_preprocess_dataset(dataset_path, transforms)
+    train_dataset, val_dataset = load_and_preprocess_dataset(dataset_path, image_processor)
     
     model = load_model(num_labels=len(train_dataset.features['label'].names), device=device)
     
