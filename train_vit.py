@@ -7,6 +7,17 @@ import numpy as np
 from transformers.integrations import TensorBoardCallback
 import os
 
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    # When running on the CuDNN backend, two further options must be set
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    # Set a fixed value for the hash seed
+    os.environ["PYTHONHASHSEED"] = str(seed)
+
 def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -23,7 +34,7 @@ def preprocess_images(examples, transforms):
     return examples
 
 def load_and_preprocess_dataset(dataset_path, transforms):
-    dataset = load_dataset(dataset_path, data_dir='subset_tiny')
+    dataset = load_dataset(dataset_path, data_dir='subset_tiny_robo_aug')
     dataset = dataset.map(lambda examples: preprocess_images(examples, transforms), batched=True, remove_columns=['image'])
     return dataset['train'], dataset['test']
 
@@ -35,10 +46,10 @@ def load_model(num_labels, device):
     )
     return model.to(device)
 
-def get_log_dir(batch_size, num_epochs, run_number):
-    return f'./logs_vit/bs={batch_size}_e={num_epochs}_run_{run_number}'
+def get_log_dir(batch_size, num_epochs, run_number, seed):
+    return f'./logs_vit/bs={batch_size}_e={num_epochs}_run_{run_number}_seed_{seed}'
 
-def get_training_args(batch_size, num_epochs, log_dir):
+def get_training_args(batch_size, num_epochs, log_dir, seed):
     return TrainingArguments(
         output_dir='./results_vit',
         eval_strategy='epoch',
@@ -50,6 +61,9 @@ def get_training_args(batch_size, num_epochs, log_dir):
         logging_dir=log_dir,
         logging_steps=10,
         report_to=["tensorboard"],
+        seed=seed,
+        dataloader_drop_last=False,
+        dataloader_num_workers=0,
     )
 
 def compute_metrics(p):
@@ -78,9 +92,10 @@ def train_and_evaluate(model, train_dataset, val_dataset, training_args):
 def main():
     # Set your parameters
     batch_size = 8
-    num_epochs = 50
-    run_number = 3
+    num_epochs = 40
+    run_number = 6
     dataset_path = '/user/work/yf20630/cow-dataset-project/datasets'
+    seed = 42
 
     device = get_device()
     image_processor = AutoImageProcessor.from_pretrained('google/vit-base-patch16-224')
@@ -90,10 +105,10 @@ def main():
     
     model = load_model(num_labels=len(train_dataset.features['label'].names), device=device)
     
-    log_dir = get_log_dir(batch_size, num_epochs, run_number)
+    log_dir = get_log_dir(batch_size, num_epochs, run_number, seed)
     os.makedirs(log_dir, exist_ok=True)
     
-    training_args = get_training_args(batch_size, num_epochs, log_dir)
+    training_args = get_training_args(batch_size, num_epochs, log_dir, seed)
     
     results = train_and_evaluate(model, train_dataset, val_dataset, training_args)
     print(results)
