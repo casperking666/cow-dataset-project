@@ -1,0 +1,41 @@
+# 40e
+Speed: 0.2ms preprocess, 1.1ms inference, 0.0ms loss, 0.0ms postprocess per image
+Results saved to [1mruns/classify/train262[0m
+ultralytics.utils.metrics.ClassifyMetrics object with attributes:
+
+confusion_matrix: <ultralytics.utils.metrics.ConfusionMatrix object at 0x7efd34d6f850>
+curves: []
+curves_results: []
+fitness: 0.9998512864112854
+keys: ['metrics/accuracy_top1', 'metrics/accuracy_top5']
+results_dict: {'metrics/accuracy_top1': 0.9997025728225708, 'metrics/accuracy_top5': 1.0, 'fitness': 0.9998512864112854}
+save_dir: PosixPath('runs/classify/train262')
+speed: {'preprocess': 0.2410403413321019, 'inference': 1.092798172540011, 'loss': 0.002257058173276765, 'postprocess': 0.0012050263864973527}
+task: 'classify'
+top1: 0.9997025728225708
+top5: 1.0
+
+
+
+
+
+# 1e
+Speed: 0.4ms preprocess, 0.8ms inference, 0.0ms loss, 0.0ms postprocess per image
+Results saved to [1mruns/classify/train332[0m
+ultralytics.utils.metrics.ClassifyMetrics object with attributes:
+
+confusion_matrix: <ultralytics.utils.metrics.ConfusionMatrix object at 0x7f325ee728c0>
+curves: []
+curves_results: []
+fitness: 0.9919317364692688
+keys: ['metrics/accuracy_top1', 'metrics/accuracy_top5']
+results_dict: {'metrics/accuracy_top1': 0.9842538833618164, 'metrics/accuracy_top5': 0.9996095895767212, 'fitness': 0.9919317364692688}
+save_dir: PosixPath('runs/classify/train332')
+speed: {'preprocess': 0.43199172756343074, 'inference': 0.8007161946289689, 'loss': 0.0014470262749613377, 'postprocess': 0.0012088647700466818}
+task: 'classify'
+top1: 0.9842538833618164
+top5: 0.9996095895767212
+
+
+# aug job 153
+150 epochs completed in 0.485 hours.

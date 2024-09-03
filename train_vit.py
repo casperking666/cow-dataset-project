@@ -27,7 +27,7 @@ def preprocess_images(examples, image_processor):
     return examples
 
 def load_and_preprocess_dataset(dataset_path, image_processor):
-    dataset = load_dataset(dataset_path, data_dir='subset_tiny_robo_aug')
+    dataset = load_dataset(dataset_path, data_dir='subset_tiny_torch_aug_best')
     dataset = dataset.map(
         lambda examples: preprocess_images(examples, image_processor), 
         batched=True, 
@@ -89,8 +89,8 @@ def train_and_evaluate(model, train_dataset, val_dataset, training_args):
 def main():
     # Set your parameters
     batch_size = 8
-    num_epochs = 40
-    run_number = 9
+    num_epochs = 20
+    run_number = "torch_aug_best"
     dataset_path = '/user/work/yf20630/cow-dataset-project/datasets'
     seed = 42
 

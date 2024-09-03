@@ -2,7 +2,7 @@ import comet_ml
 from ultralytics import YOLO
 
 
-comet_ml.init(project_name="cow-project-subset-small")
+comet_ml.init(project_name="cow-project-subset-tiny")
 
 
 model = YOLO("yolov8s-cls.yaml")  # build a new model from YAML
@@ -32,18 +32,29 @@ model = YOLO("yolov8s-cls.yaml")  # build a new model from YAML
 # )
 
 results = model.train(
-    data = "/user/work/yf20630/cow-dataset-project/datasets/subset_small", 
-    epochs=150, 
-    imgsz=640, 
+    data = "/user/work/yf20630/cow-dataset-project/datasets/subset_tiny", 
+    epochs=400, 
+    imgsz=224, 
     device=0, 
-    save_period=1,
+    hsv_h=0.0,
+    hsv_s=0.0,
+    hsv_v=0.0,
+    degrees=0.0,
+    translate=0.0,
     scale=0.0,
-    fliplr=0.0
+    shear=0.0,
+    perspective=0.0,
+    flipud=0.0,
+    fliplr=0.0,
+    mosaic=0.0,
+    mixup=0.0,
+    copy_paste=0.0,
+    erasing=0.0
 )
 
 
 # Evaluate the model
-metrics = model.val(data = "/user/work/yf20630/cow-dataset-project/datasets/subset_small", split="test")
+metrics = model.val(data = "/user/work/yf20630/cow-dataset-project/datasets/subset_tiny", split="test")
 print(metrics)
 
 

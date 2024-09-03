@@ -10,5 +10,8 @@ results_vit/
 runs/
 .cometml-runs/
 logs_vit/
+vit_jobs/
+yolo-aug-tuning/
+yolo-hsv-aug/
 *.log
 *.out
